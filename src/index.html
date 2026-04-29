@@ -345,7 +345,7 @@ function bits()
    for (i=0;i<16;i++) {
       if (Math.trunc(t%2) != 0) temp += '1';
       else temp += '0';
-      t/=2;
+      t=Math.trunc(t/2);
    }
    clearer(BITS,0);
    printat(27,18,temp);
@@ -664,7 +664,7 @@ function lseg()
 {
    if (p==1) printat(43,34,"LSR  REG");
    c=a%2;
-   a/=2;
+   a=Math.trunc(a/2);
    c_agb();
    a_agb();
    r[rb]=a;
@@ -1089,9 +1089,9 @@ function decode()
    set[0] = "NOOP";
    d=ir;
    rb=Math.trunc(d%8); 
-   d/=16;
+   d=Math.trunc(d/16);
    ra=Math.trunc(d%8);
-   d/=16;
+   d=Math.trunc(d/16);
    ad=Math.trunc(d%8); 
    op=Math.trunc(d/8);
    if (op>26) {
