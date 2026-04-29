@@ -10,4 +10,4 @@ Ensure Python installed.
 
 From that working directory type `sh run.sh`.
 
-In a browser navigate to [http://localhost:8000/src]http://localhost:8000/src.
+In a browser navigate to http://localhost:8000/src.
