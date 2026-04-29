@@ -339,7 +339,7 @@ function bits()
    var t;
    var i = 0;
 
-   a=a%65536;
+   a=Math.trunc(a%65536);
    t=a;
    temp = '';
    for (i=0;i<16;i++) {
@@ -523,7 +523,7 @@ function a_agb()
    bits();
    if (a==0) z=1;
    else z=0;
-   if (a/32768==1) n=1;
+   if (Math.trunc(a/32768)==1) n=1;
    else n=0;
    clearer(NZ,0);
    temp = String.fromCharCode(n+48) + String.fromCharCode(z+48);
@@ -534,7 +534,7 @@ function aceg()
 {
    if (p==1) printat(43,34,"ADC  REG");
    a=a1+a2+c;
-   c=a/65536;
+   c=Math.trunc(a/65536);
    c_agb();
    a_agb();
    r[rb]=a;
@@ -546,7 +546,7 @@ function adar()
 {
    if (p==1) printat(43,34,"ADD  MAR");
    a=a1+a2;
-   c=a/65536;
+   c=Math.trunc(a/65536);
    c_agb();
    a_agb();
    mar=a;
@@ -559,7 +559,7 @@ function adpc()
 {
    if (p==1) printat(43,34,"ADD  PC");
    a=a1+a2;
-   c=a/65536;
+   c=Math.trunc(a/65536);
    c_agb();
    a_agb();
    pc=a;
@@ -571,7 +571,7 @@ function adeg()
 {
    if (p==1) printat(43,34,"ADD  REG");
    a=a1+a2;
-   c=a/65536;
+   c=Math.trunc(a/65536);
    c_agb();
    a_agb();
    r[rb]=a;
@@ -593,7 +593,7 @@ function aseg()
 {
    if (p==1) printat(43,34,"ASL  REG");
    a*=2;
-   c=a/65536;
+   c=Math.trunc(a/65536);
    c_agb();
    a_agb();
    r[rb]=a;
@@ -606,7 +606,7 @@ function cmcc()
    if (p==1) printat(43,34,"CMP  ACC");
    a=a1-a2;
    if (a<0) a+=65536;
-   c=a/65536;
+   c=Math.trunc(a/65536);
    c_agb();
    a_agb();
 }
@@ -616,7 +616,7 @@ function deeg()
    if (p==1) printat(43,34,"DEC  REG");
    a--;
    if (a<0) a+=65536;
-   c=a/65536;
+   c=Math.trunc(a/65536);
    c_agb();
    a_agb();
    if (ad==7) {
@@ -645,7 +645,7 @@ function ineg()
 {
    if (p==1) printat(43,34,"INC  REG");
    a++;
-   c=a/65536;
+   c=Math.trunc(a/65536);
    c_agb();
    a_agb();
    if (ad==6) {
@@ -738,7 +738,7 @@ function roeg()
 {
    if (p==1) printat(43,34,"ROL  REG");
    a=a*2+c;
-   c=a/65536;
+   c=Math.trunc(a/65536);
    c_agb();
    a_agb();
    r[rb]=a;
@@ -750,7 +750,7 @@ function sbeg()
 {
    if (p==1) printat(43,34,"SBC  REG");
    a=a2+c+(a1^65535);
-   c=a/65536;
+   c=Math.trunc(a/65536);
    c_agb();
    a_agb();
    r[rb]=a;
@@ -770,7 +770,7 @@ function sueg()
 {
    if (p==1) printat(43,34,"SUB  REG");
    a=a2+1+(a1^65535);
-   c=a/65536;
+   c=Math.trunc(a/65536);
    c_agb();
    a_agb();
    r[rb]=a;
