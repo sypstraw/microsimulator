@@ -488,7 +488,7 @@ function pcar()
 function reem()
 {
    if (p==1) printat(43,34,"READ MEM");
-   mbr=m[mar%128];
+   mbr=m[Math.trunc(mar%128)];
    clearer(MBR,0);
    flash(55,18,mbr);
 }
@@ -513,7 +513,7 @@ function spbr()
 function wrem()
 {
    if (p==1) printat(43,34,"WRI  MEM");
-   m[mar%128]=mbr;
+   m[Math.trunc(mar%128)]=mbr;
    clearer(MEM,mar-off);
    flash(71,mar+1-off,mbr);
 }
@@ -663,7 +663,7 @@ function ineg()
 function lseg()
 {
    if (p==1) printat(43,34,"LSR  REG");
-   c=a%2;
+   c=Math.trunc(a%2);
    a=Math.trunc(a/2);
    c_agb();
    a_agb();
@@ -1274,7 +1274,7 @@ async function entry(h)
       if (y<58) s=s+y-48;
       else s=s+y-55;
    }
-   m[mar%128]=s;
+   m[Math.trunc(mar%128)]=s;
 
    clearer(MEM, mar-off);
    clearer(DATA, 0);
@@ -1316,12 +1316,12 @@ async function data()
          point();
       }
       if (x==73) {
-         for (i=127;i>=(mar % 128)+1;i--) m[i]=m[i-1];
-         m[mar%128]=65535;
+         for (i=127;i>=Math.trunc(mar % 128)+1;i--) m[i]=m[i-1];
+         m[Math.trunc(mar%128)]=65535;
          values();
       }
       if (x==82) {
-         for (i=mar%128;i<=126;i++) m[i]=m[i+1];
+         for (i=Math.trunc(mar%128);i<=126;i++) m[i]=m[i+1];
          m[127]=65535;
          values();
       }
@@ -1495,7 +1495,7 @@ function off_agb(t)
 
 function lines(t)
 {
-   t=t%128;
+   t=Math.trunc(t%128);
    if (t<off || t>off+21) off_agb(t);
    t=t-off+1;
    line(504,96,504,8+16*t);
