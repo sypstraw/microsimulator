@@ -1,0 +1,1578 @@
+<!DOCTYPE html>
+<html>
+<head>
+   <link rel="icon" href="data:image/png;base64,iVBORw0KGgo=">
+</head>
+<body>
+
+<style>
+   canvas { 
+      display:block; 
+      margin:0 auto; 
+
+      display: flex;  
+      height: calc(100vh - 16px);
+      align-items: center;  
+      justify-content: center;
+   } 
+   body {
+      background: black;
+   }
+</style>
+
+<canvas id="myCanvas" width="700" height="600">
+   Sorry, your browser does not support canvas.
+</canvas>
+
+<script>
+const A1=1;
+const A2=2;
+const ALU=3;
+const BITS=4;
+const C=5;
+const CLOCK=6;
+const CONTROL=7;
+const DATA=8;
+const ENTRY=9;
+const INVALID=10;
+const IR=11;
+const IR2=12;
+const MAR=13;
+const MENU=14;
+const MEM=15;
+const MBR=16;
+const MICRO=17;
+const NZ=18;
+const OFF=19;
+const REG=20;
+const SP=21;
+const PC=22;
+const VERSION="Version 1.1 (C) 20/08/1996";
+
+const canvas = document.getElementById("myCanvas");
+const ctx = canvas.getContext("2d");
+
+var mar = 15, omar = 15, off = 0, wait = 0, mench = 0;
+var ra = 7, rb = 7, a = 0, cl = 65535, p = 0, end = 0, noin = 0;
+var m = [], r = [];
+var ad_agb = '', op_agb = '';
+var pc = 65535, sp = 128, ir = 65535, ir2 = 65535, a1 = 65535, a2 = 65535, ac = 0, mbr = 65535, c = 0, n = 0, z = 0, s = 0, op = 0;
+var temp = '', mi = '', f=0, ad=0;
+var ins = [], set = [];
+var kbhit = 0;
+
+function setcolor(col)
+{
+   if (col == 0) ctx.strokeStyle = "#000000";
+   if (col == 2) ctx.strokeStyle = "#00AA00";
+   if (col == 3) ctx.strokeStyle = "#00AAAA";
+   if (col == 4) ctx.strokeStyle = "#AA0000";
+
+   if (col == 0) ctx.fillStyle = "#000000";
+   if (col == 2) ctx.fillStyle = "#00AA00";
+   if (col == 3) ctx.fillStyle = "#00AAAA";
+   if (col == 4) ctx.fillStyle = "#AA0000";
+}
+
+function clearviewport(x1, y1, x2, y2, col)
+{
+   setcolor(col);
+   ctx.fillRect(x1,y1,x2-x1,y2-y1);
+   setcolor(2);
+}
+
+function clearer(what, i)
+{
+   if (what == A1) clearviewport     (36*8-1,(13*16)+1,40*8+1,(14*16)-1,0);
+   if (what == A2) clearviewport     (30*8-1,(13*16)+1,34*8+1,(14*16)-1,0);
+   if (what == ALU) clearviewport    (27*8-1,(18*16)+1,43*8+1,(19*16)-1,0);
+   if (what == BITS) clearviewport   (27*8-1,(18*16)+1,43*8+1,(19*16)-1,0);
+   if (what == C) clearviewport      (35*8-1,(19.7*16)+1,36*8+1,(20.5*16)-1,0);
+   if (what == CLOCK) clearviewport  (9*8-1,(2*16)+1,13*8+1,(3*16)-1,0);
+   if (what == CONTROL) clearviewport(28*8-1,(4*16)+1,41*8+1,(5*16)-1,0);
+   if (what == DATA) clearviewport   (49*8-1,(36*16)+1,53*8+1,(37*16)-1,0);
+   if (what == ENTRY) clearviewport  ((43+i-1)*8-1,(34*16)+1,(43+i)*8+1,(35*16)-1,0);
+   if (what == INVALID) clearviewport(24*8-1,(35*16)+1,57*8+1,(36*16)-1,0);
+   if (what == IR) clearviewport     (30*8-1,(7*16)+1,34*8+1,(8*16)-1,0);
+   if (what == IR2) clearviewport    (36*8-1,(7*16)+1,40*8+1,(8*16)-1,0);
+   if (what == MAR) clearviewport    (55*8-1,(7*16)+1,59*8+1,(8*16)-1,0);
+   if (what == MBR) clearviewport    (55*8-1,(18*16)+1,59*8+1,(19*16)-1,0);
+   if (what == MEM) clearviewport    (71*8-1,((i+1)*16)+1,75*8+1,((i+2)*16)-1,0);
+   if (what == MENU) clearviewport   (0,450,799,599,0);
+   if (what == MICRO) clearviewport  (43*8-1,(34*16)+1,51*8+1,(35*16)-1,0);
+   if (what == NZ) clearviewport     (48*8-1,(22*16)+1,50*8+1,(23*16)-1,0);
+   if (what == OFF) clearviewport    (65*8-1,16,69*8+1,375,0);
+   if (what == PC) clearviewport     (6*8-1,(7*16)+1,10*8+1,(8*16)-1,0);
+   if (what == REG) clearviewport    (7*8-1,((15+i)*16)+1,11*8+1,((16+i)*16)-1,0);
+   if (what == SP) clearviewport     (18*8-1,(7*16)+1,22*8+1,(8*16)-1,0);
+}
+
+function settextstyle(size) {
+   size *= 8;
+   ctx.font = size.toString() + "px myFont";
+}
+
+function line(x1, y1, x2, y2) {
+   ctx.beginPath();
+   ctx.moveTo(x1,y1);
+   ctx.lineTo(x2,y2);
+   ctx.stroke();
+}
+
+function vline(x, b, t)
+{       
+   line(8*x,16*b,8*x,16*(t+1));
+}       
+        
+function hline(y, l, r)
+{       
+   y = 16*y;
+   line(8*l,y,8*(r+1),y);
+}   
+
+function box(l, r, b, t) {               
+   l=8*l;
+   r=8*(r+1);
+   b=(b+1)*16;
+   t=t*16; 
+   line(l,b,r,b);
+   line(r,b,r,t);
+   line(r,t,l,t);
+   line(l,t,l,b);
+}
+
+function arrow(d, x, y)
+{       
+   if (d == 'd') {
+      x=8*x; 
+      y=(y+1)*16-16;
+      x1=x-4;
+      x2=x+4;
+      y1=y-4;
+      y2=y1; 
+   }
+   if (d == 'u') {
+      x=8*x;
+      y=y*16+16;
+      x1=x-4;
+      x2=x+4;
+      y1=y+4;
+      y2=y1;
+   }       
+   if (d == 'l') {
+      x=8*x+2+0.5;
+      y=y*16;
+      x1=x+4;
+      x2=x1;
+      y1=y+4;
+      y2=y-4;
+   }
+   if (d == 'r') {
+      x=8*x+0.5;
+      y=y*16;
+      x1=x-4;
+      x2=x1;
+      y1=y+4;
+      y2=y-4;
+   }
+   line(x,y,x1,y1);
+   line(x,y,x2,y2);
+}
+
+function printat(x, y, string)
+{               
+   x=x*8+1;
+   y=y*16+3;
+   ctx.fillText(string,x,y+8);
+}
+
+function outtextxy(x, y, string)
+{               
+   ctx.fillText(string,x,y+8);
+}
+
+function screen()
+{
+   printat(18,0,"CENTRAL PROCESSING UNIT");
+   printat(2,2,"CLOCK  ffff");
+   printat(19,3,"CONTROL");
+   printat(20,4,"UNIT");
+   printat(56,3,"Address");
+   printat(58,4,"Bus");
+   printat(55,5,"(7 bits)");
+   printat(60,24,"Data Bus (16 bits)");
+   printat(70,0,"MEMORY");
+   printat(50,7,"MAR  000f");
+   printat(50,18,"MBR  ffff");
+   printat(40,22,"STATUS  00");
+   printat(21,18,"ALU");
+   printat(42,13,"A1");
+   printat(26,13,"A2  ffff  ffff");
+   printat(3,13,"REGISTERS");
+   printat(21,10,"INTERNAL DATA BUS");
+   printat(2,7,"PC  ffff");
+   printat(14,7,"SP  0080");
+   printat(26,7,"IR  ffff  ffff");
+   printat(42,7,"IR2");
+   printat(28,4,"STP IMP R7 R7");
+   outtextxy(8*29.5,16*16.4,"ACCUMULATOR");
+   outtextxy(8*32,16*19.7,"C  0");
+   outtextxy(8*48,16*23.4,"NZ");
+   box(8,13,2,2); 
+   box(5,10,7,7); 
+   box(17,22,7,7);
+   box(29,34,7,7);
+   box(35,40,7,7);
+   box(54,59,7,7);
+   box(27,42,5,3);
+   box(0,59,10,10);
+   box(29,34,13,13);
+   box(35,40,13,13);
+   box(25,44,20,16);
+   box(26,43,18,18);
+   box(34,36,19.5,19.5);
+   box(54,59,18,18);
+   box(47,50,22,22);
+   vline(8,10,7);
+   vline(20,10,7);
+   vline(32,10,7);
+   vline(38,10,7);
+   vline(57,10,7);
+   vline(32,7,5);
+   vline(16,22.5,10);
+   vline(19,22,10);
+   vline(35,22,20);
+   vline(32,16,13);
+   vline(38,16,13);
+   vline(32,13,10);
+   vline(38,13,10);
+   vline(48,22,17.5);
+   vline(49.5,22,10);
+   vline(57,18,10);
+   vline(57,25.1,18);
+   vline(57,7,5);
+   hline(22,19,34);
+   hline(18.5,45,47);
+   hline(6,57,62);
+   hline(25.1,57,78);
+   arrow('u', 8, 7);
+   arrow('u', 20, 7);
+   arrow('u', 32, 7);
+   arrow('u', 38, 7);
+   arrow('u', 57, 7);
+   arrow('u', 32, 5);
+   arrow('u', 16, 10);
+   arrow('u', 19, 10);
+   arrow('u', 49.5, 10);
+   arrow('u', 57, 10);
+   arrow('u', 57, 18);
+   arrow('d', 8, 10);
+   arrow('d', 20, 10);
+   arrow('d', 38, 10);
+   arrow('d', 32, 13);
+   arrow('d', 38, 13);
+   arrow('d', 32, 16);
+   arrow('d', 38, 16);
+   arrow('d', 57, 18);
+   arrow('d', 48, 22);
+   point();
+   
+   for (i=0;i<=7;i++) {
+      box(6,11,15+i,15+i);
+      hline(15.5+i,12,15);
+      arrow('l',11.8,15.5+i);
+      arrow('r',16,15.5+i);
+      temp = "R" + i.toString();
+      printat(3,15+i,temp);
+      printat(7,15+i,"ffff");
+   }
+   for (i=0;i<=21;i++) {
+      box(70,75,i+1,i+1);
+      temp = ('0000' + i.toString(16)).slice(-4);
+      printat(65,i+1,temp);
+      temp = (65535).toString(16);
+      printat(71,i+1,temp);
+   }
+   printat(27,18,"0000000000000000");
+}
+
+function welcome()
+{
+   clearviewport(0,0,canvas.width,canvas.height,0);
+   setcolor(3);
+   settextstyle(3);
+   outtextxy(10,200,"The Microprocessor Simulator");
+   setcolor(4);
+   settextstyle(2);
+   outtextxy(54,240,"Based on a program by Clive S. Fraser");
+   outtextxy(38,280,"Written for the IBM-PC by Adam G. Byrne");
+   setcolor(3);
+   settextstyle(1);
+   outtextxy(246,340,VERSION);
+}
+
+function clock()
+{
+   cl++;
+   clearer(CLOCK,0);
+   temp = ('0000' + cl.toString(16)).slice(-4);
+   printat(9,2,temp);
+}
+
+async function flash(x, y, i)
+{
+   clock();
+   temp = ('0000' + i.toString(16)).slice(-4);
+   printat(x,y,temp);
+   await sleep(wait);
+}
+
+function clockreset()
+{
+   cl=0;
+   clearer(CLOCK,0);
+   printat(9,2,"0000");
+}
+
+function bits()
+{
+   var t;
+   var i = 0;
+
+   a=a%65536;
+   t=a;
+   temp = '';
+   for (i=0;i<16;i++) {
+      if (Math.trunc(t%2) != 0) temp += '1';
+      else temp += '0';
+      t/=2;
+   }
+   clearer(BITS,0);
+   printat(27,18,temp);
+}
+
+function c_agb()
+{
+   clearer(C,0);
+   temp = String.fromCharCode(c+48);
+   outtextxy(8*35,16*19.8,temp);
+}
+
+function cllu()
+{
+   if (p==1) printat(43,34,"CLC  ALU");
+   c=0;
+   c_agb();
+}
+
+function selu()
+{
+   if (p==1) printat(43,34,"SEC  ALU");
+   c=1;
+   c_agb();
+}
+
+function inpc()
+{
+   if (p==1) printat(43,34,"INC  PC");
+   pc++;
+   clearer(PC,0);
+   temp = ('0000' + pc.toString(16)).slice(-4);
+   printat(6,7,temp);
+}
+
+function desp()
+{
+   if (p==1) printat(43,34,"DEC  SP");
+   sp--;
+   clock();
+   clearer(SP,0);
+   temp = ('0000' + sp.toString(16)).slice(-4);
+   printat(18,7,temp);
+}
+
+function insp()
+{
+   if (p==1) printat(43,34,"INC  SP");
+   sp++;
+   clock();
+   clearer(SP,0);
+   temp = ('0000' + sp.toString(16)).slice(-4);
+   printat(18,7,temp);
+}
+
+function irpc()
+{
+   if (p==1) printat(43,34,"IR2  PC");
+   pc=ir2;
+   clearer(PC,0);
+   flash(6,7,pc);
+}
+
+function mba1()
+{
+   if (p==1) printat(43,34,"MBR  A1");
+   a1=mbr;
+   a=a1;
+   bits();
+   clearer(A1,0);
+   flash(36,13,a1);
+}
+
+function mba2()
+{
+   if (p==1) printat(43,34,"MBR  A2");
+   a2=mbr;
+   clearer(A2,0);
+   flash(30,13,a1);
+}
+
+function pcbr()
+{
+   if (p==1) printat(43,34,"PC   MBR");
+   mbr=pc;
+   clearer(MBR,0);
+   flash(55,18,mbr);
+}
+
+function mbr2()
+{
+   if (p==1) printat(43,34,"MBR  IR2");
+   ir2=mbr;
+   clearer(IR2,0);
+   flash(36,7,ir2);
+}
+
+function mbar()
+{
+   if (p==1) printat(43,34,"MBR  MAR");
+   mar=mbr;
+   point();
+   clearer(MAR,0);
+   flash(55,7,mar);
+}
+
+function mbpc()
+{
+   if (p==1) printat(43,34,"MBR  PC");
+   pc=mbr;
+   clearer(PC,0);
+   flash(6,7,pc);
+}
+
+function mbsp()
+{
+   if (p==1) printat(43,34,"MBR  SP");
+   sp=mbr;
+   clearer(SP,0);
+   flash(18,7,sp);
+}
+
+function pca2()
+{
+   if (p==1) printat(43,34,"PC   A2");
+   a2=pc;
+   clearer(A2,0);
+   flash(30,13,a2);
+}
+
+function pcar()
+{
+   if (p==1) printat(43,34,"PC   MAR");
+   mar=pc;
+   point();        
+   clearer(MAR,0);
+   flash(55,7,mar);
+}
+
+function reem()
+{
+   if (p==1) printat(43,34,"READ MEM");
+   mbr=m[mar%128];
+   clearer(MBR,0);
+   flash(55,18,mbr);
+}
+
+function spar()
+{
+   if (p==1) printat(43,34,"SP   MAR");
+   mar=sp;
+   point();
+   clearer(MAR,0);
+   flash(55,7,mar);
+}
+
+function spbr()
+{
+   if (p==1) printat(43,34,"SP   MBR");
+   mbr=sp;
+   clearer(MBR,0);
+   flash(55,18,mbr);
+}
+
+function wrem()
+{
+   if (p==1) printat(43,34,"WRI  MEM");
+   m[mar%128]=mbr;
+   clearer(MEM,mar-off);
+   flash(71,mar+1-off,mbr);
+}
+
+function a_agb()
+{
+   bits();
+   if (a==0) z=1;
+   else z=0;
+   if (a/32768==1) n=1;
+   else n=0;
+   clearer(NZ,0);
+   temp = String.fromCharCode(n+48) + String.fromCharCode(z+48);
+   printat(48,22,temp);
+}
+
+function aceg()
+{
+   if (p==1) printat(43,34,"ADC  REG");
+   a=a1+a2+c;
+   c=a/65536;
+   c_agb();
+   a_agb();
+   r[rb]=a;
+   clearer(REG,rb);
+   flash(7,15+rb,a);
+}
+
+function adar()
+{
+   if (p==1) printat(43,34,"ADD  MAR");
+   a=a1+a2;
+   c=a/65536;
+   c_agb();
+   a_agb();
+   mar=a;
+   point();
+   clearer(MAR,0);
+   flash(55,7,mar);
+}
+
+function adpc()
+{
+   if (p==1) printat(43,34,"ADD  PC");
+   a=a1+a2;
+   c=a/65536;
+   c_agb();
+   a_agb();
+   pc=a;
+   clearer(PC,0);
+   flash(6,7,pc);
+}
+
+function adeg()
+{
+   if (p==1) printat(43,34,"ADD  REG");
+   a=a1+a2;
+   c=a/65536;
+   c_agb();
+   a_agb();
+   r[rb]=a;
+   clearer(REG,rb);
+   flash(7,15+rb,a);
+}
+
+function aneg()
+{
+   if (p==1) printat(43,34,"AND  REG");
+   a=a1 & a2;
+   a_agb();
+   r[rb]=a;
+   clearer(REG,rb);
+   flash(7,15+rb,a);
+}
+
+function aseg()
+{
+   if (p==1) printat(43,34,"ASL  REG");
+   a*=2;
+   c=a/65536;
+   c_agb();
+   a_agb();
+   r[rb]=a;
+   clearer(REG,rb);
+   flash(7,15+rb,a);
+}
+
+function cmcc()
+{
+   if (p==1) printat(43,34,"CMP  ACC");
+   a=a1-a2;
+   if (a<0) a+=65536;
+   c=a/65536;
+   c_agb();
+   a_agb();
+}
+
+function deeg()
+{
+   if (p==1) printat(43,34,"DEC  REG");
+   a--;
+   if (a<0) a+=65536;
+   c=a/65536;
+   c_agb();
+   a_agb();
+   if (ad==7) {
+      r[ra]=a;
+      clearer(REG,ra);
+      flash(7,15+ra,a);
+   } 
+   else {
+      r[rb]=a;
+      clearer(REG,rb);
+      flash(7,15+rb,a);
+   }
+}
+
+function eoeg()
+{
+   if (p==1) printat(43,34,"EOR  REG");
+   a=a1^a2;
+   a_agb();
+   r[rb]=a;
+   clearer(REG,rb);
+   flash(7,15+rb,a);
+}
+
+function ineg()
+{
+   if (p==1) printat(43,34,"INC  REG");
+   a++;
+   c=a/65536;
+   c_agb();
+   a_agb();
+   if (ad==6) {
+      r[ra]=a;
+      clearer(REG,ra);
+      flash(7,15+ra,a);
+   } 
+   else {
+      r[rb]=a;
+      clearer(REG,rb);
+      flash(7,15+rb,a);
+   }
+}
+
+function lseg()
+{
+   if (p==1) printat(43,34,"LSR  REG");
+   c=a%2;
+   a/=2;
+   c_agb();
+   a_agb();
+   r[rb]=a;
+   clearer(REG,rb);
+   flash(7,15+rb,a);
+}
+
+function mbeg()
+{
+   if (p==1) printat(43,34,"MBR  REG");
+   r[rb]=mbr;
+   clearer(REG,rb);
+   flash(7,15+rb,mbr);
+}
+
+function oreg()
+{
+   if (p==1) printat(43,34,"OR   REG");
+   a=a1|a2;
+   a_agb();
+   r[rb]=a;
+   clearer(REG,rb);
+   flash(7,15+rb,a);
+}
+
+function rea1()
+{
+   if (p==1) printat(43,34,"REG  A1");
+   a1=r[ra];
+   a=a1;
+   bits();
+   clearer(A1,0);
+   flash(36,13,a1);
+}
+
+function rea2()
+{
+   if (p==1) printat(43,34,"REG  A2");
+   a2=r[rb];
+   clearer(A2,0);
+   flash(30,13,a2);
+}
+
+function rear()
+{
+   if (p==1) printat(43,34,"REG  MAR");
+   mar=r[ra];
+   point();
+   clearer(MAR,0);
+   flash(55,7,mar);
+}
+
+function rebr()
+{
+   if (p==1) printat(43,34,"REG  MBR");
+   if (ad==4) mbr=r[ra];
+   else mbr=r[rb];
+   clearer(MBR,0);
+   flash(55,18,mbr);
+}
+
+function resp()
+{
+   if (p==1) printat(43,34,"REG  SP");
+   sp=r[ra];
+   clearer(SP,0);
+   flash(18,7,sp);
+}
+
+function roeg()
+{
+   if (p==1) printat(43,34,"ROL  REG");
+   a=a*2+c;
+   c=a/65536;
+   c_agb();
+   a_agb();
+   r[rb]=a;
+   clearer(REG,rb);
+   flash(7,15+rb,a);
+}
+
+function sbeg()
+{
+   if (p==1) printat(43,34,"SBC  REG");
+   a=a2+c+(a1^65535);
+   c=a/65536;
+   c_agb();
+   a_agb();
+   r[rb]=a;
+   clearer(REG,rb);
+   flash(7,15+rb,sp);
+}
+
+function speg()
+{
+   if (p==1) printat(43,34,"SP   REG");
+   r[rb]=sp;
+   clearer(REG,rb);
+   flash(7,15+rb,sp);
+}
+
+function sueg()
+{
+   if (p==1) printat(43,34,"SUB  REG");
+   a=a2+1+(a1^65535);
+   c=a/65536;
+   c_agb();
+   a_agb();
+   r[rb]=a;
+   clearer(REG,rb);
+   flash(7,15+rb,a);
+}
+
+function mbir()
+{
+   if (p==1) printat(43,34,"MBR  IR");
+   ir=mbr;
+   clearer(IR,0);
+   flash(30,7,ir);
+   decode();
+}
+
+function select()
+{
+   clearer(MICRO,0);
+   if (mi === "ACEG") aceg();
+   if (mi === "ADAR") adar();
+   if (mi === "ADPC") adpc();
+   if (mi === "ADEG") adeg();
+   if (mi === "ANEG") aneg();
+   if (mi === "ASEG") aseg();
+   if (mi === "CLLU") cllu();
+   if (mi === "CMCC") cmcc();
+   if (mi === "DEEG") deeg();
+   if (mi === "DESP") desp();
+   if (mi === "EOEG") eoeg();
+   if (mi === "INPC") inpc();
+   if (mi === "INEG") ineg();
+   if (mi === "INSP") insp();
+   if (mi === "IRPC") irpc();
+   if (mi === "LSEG") lseg();
+   if (mi === "MBA1") mba1();
+   if (mi === "MBA2") mba2();
+   if (mi === "MBIR") mbir();
+   if (mi === "MBR2") mbr2();
+   if (mi === "MBAR") mbar();
+   if (mi === "MBPC") mbpc();
+   if (mi === "MBEG") mbeg();
+   if (mi === "MBSP") mbsp();
+   if (mi === "OREG") oreg();
+   if (mi === "PCA2") pca2();
+   if (mi === "PCAR") pcar();
+   if (mi === "PCBR") pcbr();
+   if (mi === "REEM") reem();
+   if (mi === "REA1") rea1();
+   if (mi === "REA2") rea2();
+   if (mi === "REAR") rear();
+   if (mi === "REBR") rebr();
+   if (mi === "RESP") resp();
+   if (mi === "ROEG") roeg();
+   if (mi === "SBEG") sbeg();
+   if (mi === "SELU") selu();
+   if (mi === "SPAR") spar();
+   if (mi === "SPBR") spbr();
+   if (mi === "SPEG") speg();
+   if (mi === "SUEG") sueg();
+   if (mi === "WREM") wrem();
+   if (mi === "NOOP") printat(43,34,"NOP");
+}
+
+function add()
+{
+   op_agb = "ADD";
+   if (ad==4) {
+      s=0;
+      set[s] = "REA1";
+   } 
+   else {
+      s++; 
+      set[s] = "REEM";
+      s++; 
+      set[s] = "MBA1";
+   }
+   s++; 
+   set[s] = "REA2"; 
+   s++; 
+   set[s] = "ADEG";
+   switch (op) {
+      case 5:  
+         op_agb = "ADC";
+         set[s] = "ACEG";
+         break;
+      case 6:  
+         op_agb = "SUB";
+         set[s] = "SUEG";
+         break;
+      case 7:  
+         op_agb = "SBC";
+         set[s] = "SBEG";
+         break;
+      case 8:  
+         op_agb = "CMP";
+         set[s] = "CMCC";
+         break;
+      case 9:  
+         op_agb = "AND";
+         set[s] = "ANEG";
+         break;
+      case 10: 
+         op_agb = "EOR";
+         set[s] = "EOEG";
+         break;
+      case 11:
+         op_agb = "OR";
+         set[s] = "OREG";
+         break;
+   }
+}
+
+function decode3()
+{
+   s++;
+   if (ad==4) {
+      s=0;
+      set[s] = "REBR";
+   } 
+   else set[s] = "REEM";
+   s++;
+   if (op==3 || op==2) s=3;
+   switch (op) {
+      case 1:  
+         op_agb = "LDR";
+         set[s] = "MBEG";
+         break;
+      case 2:  
+         op_agb = "JMP";
+         set[s] = "MBPC";
+         break;
+      case 3:  
+         op_agb = "JSR";
+         set[s] = "MBR2"; 
+         s++;
+         set[s] = "DESP"; 
+         s++;
+         set[s] = "SPAR"; 
+         s++;
+         set[s] = "PCBR"; 
+         s++;
+         set[s] = "WREM"; 
+         s++;
+         set[s] = "IRPC";
+         break;
+   }
+}
+
+function decode2()
+{
+   switch (ad) {
+      case 0:  
+         ad_agb = "ABS"; 
+         set[0] = "PCAR";
+         set[1] = "INPC";
+         set[2] = "REEM";
+         set[3] = "MBAR";
+         s=3;
+         break;
+      case 2:  
+         ad_agb = "IMM";
+         set[0] = "PCAR";
+         set[1] = "INPC";
+         s=1;
+         break;
+      case 3:  
+         ad_agb = "IDX";
+         set[0] = "PCAR";
+         set[1] = "INPC";
+         set[2] = "REEM";
+         set[3] = "MBA2";
+         set[4] = "REA1";
+         set[5] = "ADAR";
+         s=5;
+         break;
+      case 4:  
+         ad_agb = "REG";
+         break;
+      case 5:  
+         ad_agb = "IND";
+         set[0] = "REAR";
+         break;
+      case 6:  
+         ad_agb = "RPI";
+         set[0] = "REAR";
+         set[1] = "REA1";
+         set[2] = "INEG";
+         s=2;
+         break;
+      case 7:  
+         ad_agb = "RPD";
+         set[0] = "REA1";
+         set[1] = "DEEG";
+         set[2] = "REAR";
+         s=2;
+         break;
+   }
+   if (op==0) {
+      op_agb = "STO";
+      s++; 
+      set[s] = "REBR";
+      s++; 
+      set[s] = "WREM";
+   }
+   if (op>0 && op<4) decode3();
+   if (op>3) add();
+}
+
+function imp()
+{
+   ad_agb = "IMP";
+   switch (op) {
+      case 27: 
+         op_agb = "NOP"; 
+         break;
+      case 28: 
+         op_agb = "CLC";
+         set[0] = "CLLU";
+         break;
+      case 29: 
+         op_agb = "SEC";
+         set[0] = "SELU";
+         break;
+      case 30: 
+         op_agb = "RTS";
+         set[0] = "SPAR";
+         set[1] = "INSP";
+         set[2] = "REEM";
+         set[3] = "MBPC";
+         s=3;
+         break;
+      case 31: 
+         op_agb = "STP";
+         end=1;
+         break;
+   }
+}
+
+function rel()
+{
+   set[0] = "PCAR";
+   set[1] = "INPC";
+   set[2] = "REEM";
+   set[3] = "MBA1";
+   set[4] = "PCA2";
+   set[5] = "ADPC";
+   s=5;
+   if (op==20) op_agb = "BCC";
+   if (op==21) op_agb = "BCS";
+   if (op==22) op_agb = "BEQ";
+   if (op==23) op_agb = "BMI";
+   if (op==24) op_agb = "BNE";
+   if (op==25) op_agb = "BPL";
+   if (op==26) op_agb = "BRA";
+   if ((op==20 && c==1) || (op==21 && c==0) || (op==22 && z==0) || (op==23 && n==0) || (op==24 && z==1) || (op==25 && n==1)) {
+      set[0] = "INPC";
+      s=0;
+   }
+}
+
+function reg()
+{
+   set[0] = "REA1";
+   s=1;
+   switch (op) {
+      case 12: 
+         op_agb = "ASL";
+         set[1] = "ASEG";
+         break;
+      case 13: 
+         op_agb = "DEC";
+         set[1] ="DEEG";
+         break;
+      case 14: 
+         op_agb = "INC";
+         set[1] = "INEG";
+         break;
+      case 15: 
+         op_agb = "LSR";
+         set[1] ="LSEG";
+         break;
+      case 16: 
+         op_agb = "MOV";
+         set[0] ="REBR";
+         set[1] ="MBEG";
+         break;
+      case 17: 
+         op_agb = "ROL";
+         set[1] = "ROEG";
+         break;
+      case 18: 
+         op_agb = "POP";
+         set[0] ="SPAR";
+         set[1] ="REEM";
+         set[2] ="INSP";
+         set[3] ="MBEG";
+         s=3;
+         break;
+      case 19: 
+         op_agb = "PSH";
+         set[0] = "DESP";
+         set[1] = "SPAR";
+         set[2] = "REBR";
+         set[3] = "WREM";
+         s=3;
+         break;
+   }
+}
+
+function decode()
+{
+   var d;
+
+   s=0;
+   set[0] = "NOOP";
+   d=ir;
+   rb=Math.trunc(d%8); 
+   d/=16;
+   ra=Math.trunc(d%8);
+   d/=16;
+   ad=Math.trunc(d%8); 
+   op=Math.trunc(d/8);
+   if (op>26) {
+      ad=8;
+      imp();
+   }
+   if (op<27 && op>19) {
+      ad_agb = "REL";
+      rel();
+   }
+   if (op<20 && op>11) {
+      ad_agb = "REG";
+      reg();
+   }
+   if (op<12) decode2();
+
+   clearer(CONTROL,0);
+   temp = op_agb + ' ' + ad_agb + ' R' + ra.toString() + ' R' + rb.toString();
+   printat(28,4,temp);
+
+   if (p==1) f=0;
+}
+
+const sleep = (ms) => new Promise(resolve => setTimeout(resolve, ms));
+
+async function execute(max) {       
+   var x = 32;
+   var jj;
+
+   for (jj = 0; jj <= max; jj++) {
+      if (mench == 5) {
+         do {
+            x = await getch();
+         } while (x != 32 && x != 81);
+         
+         if (x == 81) {
+            end = 1;
+            return;
+         }
+      } else if (wait > 0) {
+         await sleep(wait); 
+      }
+                
+      clearer(MICRO, 0);
+      if (f == 1) printat(43, 34, "FETCH");
+      else printat(43, 34, "EXECUTE");
+                
+      mi = set[jj];
+      select();
+
+      if (end) return;
+   }       
+}
+
+async function prog() {
+   var x = 0;
+   p = 1;
+   end = 0;
+   sp = 128;
+   clearer(SP, 0);
+   printat(18, 7, "0080");
+
+   while (!end) {
+      set[0] = "PCAR";
+      set[1] = "INPC";
+      set[2] = "REEM";
+      set[3] = "MBIR";
+      s = 3;
+
+      if (mench == 4) {
+         do {
+            x = await getch();
+         } while (x != 32 && x != 81 && x != 49 && x != 50);
+         
+         if (x == 81) return;
+         if (x == 49) wait = 1;
+         if (x == 50) wait = 100;
+      }
+
+      clockreset();
+      clearer(MICRO, 0);
+      printat(43, 34, "FETCH");
+      f = 1;
+      
+      await execute(s);
+      if (end) break;
+      
+      f = 0; // TODO: AI added this, do we need it?
+      await execute(s);
+      await sleep(0); 
+
+      if (kbhit) {
+         let k = await getch(); 
+         if (k == 49) wait = 1;
+         if (k == 50) wait = 100;
+         if (k == 81) end = 1;
+      }
+   }
+
+   if (op == 31) {
+      clearer(MICRO, 0);
+      printat(43, 34, "HALT");
+      await getch();
+   }
+}
+
+function getch() {
+   if (kbhit) {
+      keyCode = kbhit;
+      kbhit = 0;
+      return keyCode;
+   } else return new Promise((resolve) => {
+      document.addEventListener('keydown', onKeyHandler);
+      function onKeyHandler(e) {
+         document.removeEventListener('keydown', onKeyHandler);
+         resolve(e.keyCode);
+         a = getch(); // We need to do it again because of the kbhit thing
+         resolve(a);
+      }
+   });
+}
+
+async function run()
+{       
+   printat(0,29,"RUN");
+   printat(0,30,"PROGRAM");
+   printat(24,29,"1.  Fast");
+   printat(24,30,"2.  Slow");
+   printat(24,31,"Q.  Quit");
+   printat(24,34,"Microinstruction:");
+   box(42,51,34,34);
+   wait=1;                 
+   await prog();                 
+}                       
+                
+async function step() 
+{                       
+   printat(0,29,"SINGLE STEP");
+   printat(0,30,"BY INSTRUCTIONS");
+   printat(24,29,"1.  Fast");
+   printat(24,30,"2.  Slow");
+   printat(24,31,"Q.  Quit");
+   printat(24,32,"Press SPACE for next instruction");
+   printat(24,34,"Microinstruction:");
+   box(42,51,34,34);
+   wait=1;
+   await prog();
+}       
+        
+async function micro()
+{       
+   printat(0,29,"SINGLE STEP");
+   printat(0,30,"BY MICROINSTRUCTIONS");
+   printat(24,29,"1.  Fast");
+   printat(24,30,"2.  Slow");
+   printat(24,31,"Q.  Quit");
+   printat(24,32,"Press SPACE for next instruction");
+   printat(24,34,"Microinstruction:");
+   box(42,51,34,34);
+   wait=1;
+   await prog();
+}       
+
+async function entry(h)
+{
+   var y=0;
+   var s=0;
+   var i=0;
+
+   temp = String.fromCharCode(h);
+   printat(49,36,temp);
+   if (h<58) s=h-48;
+   else s=h-55;
+   for (i=1;i<=3;i++) {
+      do y=await getch(); 
+      while ((y<48 || y>57) && (y<65 || y>70));
+      temp = String.fromCharCode(y);
+      printat(49+i,36,temp);
+      s*=16;
+      if (y<58) s=s+y-48;
+      else s=s+y-55;
+   }
+   m[mar%128]=s;
+
+   clearer(MEM, mar-off);
+   clearer(DATA, 0);
+
+   temp = ('0000' + s.toString(16)).slice(-4);
+   printat(71,mar+1-off, temp);
+   mar++;
+   point();
+}
+
+async function data()
+{
+   var x = 0;
+   var i;
+
+   printat(0,29,"DATA");
+   printat(0,30,"ENTRY");
+   printat(24,29,"Use the cursor keys to select a memory location");
+   printat(24,30,"Type 4 hexadecimal digits to enter data");
+   printat(24,31,"Press I to insert a blank line");
+   printat(24,32,"Press Z to zero address register");
+   printat(24,33,"Press R to remove the current line");
+   printat(24,34,"Press Q to quit");
+   printat(24,36,"Enter instruction word:");
+   box(48,53,36,36);
+
+   while (x != 81) {
+      x = await getch();
+      if (x==90) {
+         mar=0;
+         point();
+      }
+      if (x==38) {
+         mar--;
+         point();
+      }
+      if (x==40) {
+         mar++;
+         point();
+      }
+      if (x==73) {
+         for (i=127;i>=(mar % 128)+1;i--) m[i]=m[i-1];
+         m[mar%128]=65535;
+         values();
+      }
+      if (x==82) {
+         for (i=mar%128;i<=126;i++) m[i]=m[i+1];
+         m[127]=65535;
+         values();
+      }
+      if ((x>47 && x<58) || (x>64 && x<71)) await entry(x);
+
+      clearer(MAR,0);
+      temp = ('0000' + mar.toString(16)).slice(-4);
+      printat(55,7,temp);
+   }
+}
+
+async function counter()      
+{                       
+   var y=0;
+   var s=0;        
+   var i=0;
+        
+   printat(0,29,"PROGRAM");
+   printat(0,30,"COUNTER");
+   printat(24,29,"Enter value as 4 hexadecimal digits");
+   printat(24,31,"Counter:");
+   box(33,38,31,31);
+
+   for (i=1;i<=4;i++) {
+      s*=16;
+      do y=await getch();
+      while ((y<48 || y>57) && (y<65 || y>70));
+      if (y<58) s=s+y-48;
+      else s=s+y-55;
+      temp = String.fromCharCode(y);
+      printat(33+i,31,temp);
+   }
+   pc = s;
+   clearer(PC,0);
+   temp = ('0000' + pc.toString(16)).slice(-4);
+   printat(6,7,temp);
+}
+
+async function manent()
+{
+   var i=0;
+   var key=0;
+
+   mi = '';
+   clearer(MICRO,0);
+   while (key != 13) {
+      key=await getch();
+      if (key == 8) {
+         if (i>0) {
+            clearer(ENTRY,i);
+            mi = mi.substring(0, mi.length - 1);
+            i--;
+         }
+      }
+      else if (key != 13 && i<8) {
+         temp = String.fromCharCode(key);
+         printat(43+i,34,temp);
+         mi = mi + temp;
+         i++;
+      }
+   }
+   mi = mi.toUpperCase();
+}
+
+async function manual()
+{
+   var i=0, vi=0;
+
+   wait=50; 
+   p=0;
+   printat(0,29,"MANUAL");
+   printat(0,30,"OPERATION");
+   printat(24,29,"Use LOWER CASE letters only");
+   printat(24,30,"Enter any valid microinstruction");
+   printat(24,31,"Enter Q to quit");
+   printat(24,34,"Microinstruction:");
+   box(42,51,34,34);
+   clockreset();
+
+   while (vi != 2) {
+      vi=0;
+      await manent();
+      if (mi.slice(0,1) === "Q") vi=2;
+      if (mi.length < 4) mi = "FFFF";
+      if (mi.slice(0,3) === "ADC") mi = "ACEG";
+      lastTwo = mi.slice(-2);
+      mi = mi.substring(0, 2) + lastTwo;
+
+      noin = ins.length;
+      for (i=0;i<noin;i++) if (mi === ins[i]) vi=1;
+
+      if (vi==0) {
+         printat(24,35,"INVALID INSTRUCTION - Press a key");
+         await getch();
+         clearer(INVALID,0);
+      }
+      if (vi==1) select();
+   }
+}
+
+async function menu()
+{
+   while (mench != 7) {
+      clearer(MENU,0);
+      printat(0,29,"MAIN");
+      printat(0,30,"MENU");
+      printat(24,29,"1.  Enter data");
+      printat(24,30,"2.  Set program counter");
+      printat(24,31,"3.  Run program");
+      printat(24,32,"4.  Single step by instructions");
+      printat(24,33,"5.  Single step by microinstructions");
+      printat(24,34,"6.  Manual operation");
+      printat(24,35,"7.  Finish");
+
+      while (mench<=48 || mench>=56) mench = await getch();
+      mench -= 48;
+
+      clearer(MENU,0);
+
+      switch (mench) {
+         case 1:
+            await data();
+            break;
+         case 2:
+            await counter();
+            break;
+         case 3:
+            await run();
+            break;
+         case 4:
+            await step();
+            break;
+         case 5:
+            await micro();
+            break;
+         case 6:
+            await manual();
+            break;
+         case 7:
+            // Doing this three times to fix anti-aliasing issues
+            clearviewport(0,0,canvas.width,canvas.height,0);
+            clearviewport(0,0,canvas.width,canvas.height,0);
+            clearviewport(0,0,canvas.width,canvas.height,0);
+            console.log('Program terminated');
+            break;
+      }
+   }
+}
+
+function values()
+{
+   for (i=0;i<=21;i++) {
+      clearer(MEM, i);
+      temp = ('0000' + m[off+i].toString(16)).slice(-4);
+      printat(71,i+1,temp);
+   }
+}
+
+function off_agb(t)
+{
+   off=t;
+   if (t>106) off=106;
+        
+   clearer(OFF,0);
+   for (i=0;i<=21;i++) {
+       temp = ('0000' + (off+i).toString(16)).slice(-4);
+       printat(65,i+1,temp);
+   }
+   values();
+}
+
+function lines(t)
+{
+   t=t%128;
+   if (t<off || t>off+21) off_agb(t);
+   t=t-off+1;
+   line(504,96,504,8+16*t);
+   line(632,400,632,8+16*t);
+   hline(t+0.5,63,63.8);
+   hline(t+0.5,76.2,78);
+   arrow('r',64.8,t+0.5);
+   arrow('l',75.9,t+0.5);
+}
+
+function point()
+{
+   if (mar>127 || mar<0) mar=0;
+   setcolor(0);
+
+   // Doing this three times to fix anti-aliasing issues
+   lines(omar);
+   lines(omar);
+   lines(omar);
+
+   setcolor(2);
+   lines(mar);
+   omar=mar;
+}
+
+const readins = (callback) => {
+   var request = new XMLHttpRequest();
+   request.open('GET', 'microins.dat', true);
+   request.send(null);
+   request.onreadystatechange = function () {
+      if (request.readyState === 4 && request.status === 200) {
+         var type = request.getResponseHeader('Content-Type');
+         if (type.indexOf("text") !== 1) {
+            ins = request.responseText.match(/.{1,4}/g);
+            callback(undefined);
+         }
+      } else if (request.readyState === 4) {
+         callback("ERROR - instruction set not loaded");
+      }
+   }
+}
+
+var myFont = new FontFace('myFont', 'url(web_ibm_bios.woff)');
+
+myFont.load().then(function(font) {
+   document.fonts.add(font);
+
+   document.addEventListener('keydown', function(event) {
+      kbhit = event.keyCode;
+   })
+
+   welcome();
+   setTimeout(function() {
+      clearviewport(0,0,canvas.width,canvas.height,0);
+
+      canvas.getContext("2d").translate(0.5, 0.5);
+
+      for (i=0;i<=127;i++) m[i] = 65535;
+      for (i=0;i<=7;i++) r[i] = 65535;
+
+      setcolor(2);
+      settextstyle(1);
+
+      readins((err) => {
+         if (err) {
+            console.log(err);
+         } else {
+            screen();
+            menu();
+         }
+      });
+   }, 2000);
+}, function () {
+   console.log('ERROR - font not loaded');
+});
+
+</script>
+
+</body>
+</html>
